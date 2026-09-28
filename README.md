@@ -20,12 +20,12 @@ decide → backtest), same design discipline (event-based windows,
 no-look-ahead labeling, chronological splits), new venue and data
 source.
 
-## Status: data collection and labeling working
+## Status: data collection and baseline pipeline working
 
 The collector, book/trade parsing, feature engineering, toxicity
-labeling, and threshold sweep have been run against real Coinbase data.
-The project is still not a finished research result: model training and
-backtesting wait for the feature/label merge TODO described below.
+labeling, threshold sweep, feature/label merging, and baseline model
+training have been run against real Coinbase data. The current collection
+is still too small for a reliable research conclusion.
 
 ## Structure
 
@@ -36,7 +36,7 @@ src/features/            — rolling microstructure features
 src/labeling/            — toxicity labeling + threshold sweep + leakage check
 src/models/               — static baselines (LogReg/LightGBM) + online PULSE-inspired model
 src/evaluation/           — TWAP vs. adaptive-pause execution backtest
-scripts/                 — collect_data.py, run_pipeline.py entry points
+scripts/                 — collect_data.py, check_collection_status.py, run_pipeline.py entry points
 tests/                   — pytest suite, 32 tests, all passing against synthetic data
 ```
 
@@ -59,15 +59,16 @@ tests/                   — pytest suite, 32 tests, all passing against synthet
 3. **Run the pipeline.** Run `python scripts/run_pipeline.py` after
    collecting data. It loads the raw files, builds features, prints a
    toxicity threshold sweep, and applies labels.
+   For a lightweight collection sanity check, run
+   `python scripts/check_collection_status.py`; it reports raw file and
+   message counts plus the earliest/latest collection timestamps without
+   running the pipeline.
 4. **Review the toxicity threshold.** `config.yaml`'s
    `horizon_events=300, threshold_bps=2.0` are carried over from the
    AAPL/INTC project. The current real-data run produced a 19.5% toxic
    rate at those settings, which is inside the target 10–40% band, but
    more data is needed before treating that as validated.
-5. **Finish the feature/label merge TODO** in `run_pipeline.py` — left
-   explicit because the right join strategy depends on real data
-   volume/shape, which doesn't exist yet in this skeleton.
-6. **Extend `depth_imbalance`** — currently a placeholder (NaN) in
+5. **Extend `depth_imbalance`** — currently a placeholder (NaN) in
    `microstructure_features.py`, because `loader.py`'s book
    reconstruction only tracks best bid/ask, not full depth. TODO
    comment marks exactly where to extend it.
@@ -94,10 +95,34 @@ python -m pytest tests/ -v
 32 tests, all passing against synthetic data (no live connection
 needed to verify the logic itself).
 
-## Current real-data result
+## Historical real-data baseline
 
-One collected session loaded 4,147 book events and 1,566 trades. The
-pipeline labeled 1,472 events and reported a 19.5% toxic rate. It then
-stopped intentionally because the feature/label merge is not implemented
-yet; baseline model training and the TWAP versus adaptive backtest have
-not run on real data.
+An earlier collected session loaded 4,147 book events and 1,566 trades.
+The pipeline labeled 1,472 events and reported a 19.5% toxic rate. This
+is a preliminary baseline, not a validated result.
+
+## Collection report — 2026-09-28
+
+The unattended collector was restarted with a clean raw-data directory.
+The latest status snapshot reported:
+
+- 2 rotating JSONL files
+- 8,626 raw messages
+- collection interval: 19:43:51–19:50:29 UTC
+- no full pipeline run on this new session yet
+
+These counts are a collection-health check only; they do not measure data
+quality or model performance. The lightweight status check is scheduled
+locally every two hours and writes to `data/collection_status.log`.
+
+### Measures to improve confidence
+
+1. Continue collecting for 12–24 hours before the next full pipeline run.
+2. Inspect the sweep table, toxic rate, and LogReg AUC on that run.
+3. Afterward, run the pipeline once per day until there are tens of
+   thousands of labeled events rather than roughly 1,500.
+4. Record calm and active market periods separately so regime changes can
+   be evaluated instead of pooled together.
+5. Re-sweep the equity-derived horizon and threshold values for BTC-USD,
+   then implement full-depth `depth_imbalance` before treating model gains
+   as robust.
