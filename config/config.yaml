@@ -1,0 +1,47 @@
+# ── Data collection ──────────────────────────────────────────────
+coinbase:
+  product_id: "BTC-USD"          # TODO: adjust — any Coinbase Advanced Trade product
+  channels: ["level2", "market_trades"]
+  ws_url: "wss://advanced-trade-ws.coinbase.com"
+  reconnect_backoff_seconds: 5
+  max_reconnect_backoff_seconds: 60
+  rotate_every_n_messages: 50000  # new raw file after this many messages
+
+storage:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+
+# ── Feature engineering ──────────────────────────────────────────
+features:
+  rolling_window_updates: 50      # TODO: tune — matches window_size from prior project
+  book_depth_levels: 10           # how many price levels deep to use for depth features
+
+# ── Toxicity labeling ─────────────────────────────────────────────
+labeling:
+  horizon_events: 300             # TODO: re-sweep for crypto — equity value won't transfer as-is
+  threshold_bps: 2.0              # TODO: re-sweep — crypto vol profile differs from equities
+  min_toxic_rate: 0.10            # sweep acceptance band, lower bound
+  max_toxic_rate: 0.40            # sweep acceptance band, upper bound
+
+# ── Models ─────────────────────────────────────────────────────────
+models:
+  train_frac: 0.70
+  val_frac: 0.15
+  test_frac: 0.15
+  logreg:
+    C: 1.0
+    class_weight: "balanced"
+  lightgbm:
+    learning_rate: 0.05
+    num_leaves: 31
+  online_pulse_stub:
+    learning_rate: 0.01           # SGD step size for the simplified online model
+
+# ── Execution / backtest ────────────────────────────────────────────
+backtest:
+  side: "sell"                    # "buy" or "sell" — controls IS sign convention
+  parent_order_shares: 1000
+  n_child_slices: 30
+  pause_quantile: 0.90            # pause if predicted P(toxic) exceeds this rolling quantile
+  pause_lookback_predictions: 200 # rolling window used to compute the quantile
+  pause_duration_seconds: 5
