@@ -44,7 +44,10 @@ def add_microstructure_features(
             df[col] = pd.Series(dtype=float)
         return df
 
-    df["micro_price"] = df["mid_price"]  # TODO: refine with size-weighted micro-price if you add L2 depth columns
+    rolling_mean_price = df["mid_price"].rolling(window_size, min_periods=1).mean()
+    df["micro_price"] = (df["mid_price"] - rolling_mean_price) / rolling_mean_price
+    # This is a short-term relative price deviation, not a size-weighted
+    # micro-price; a genuine size-weighted value needs full depth data.
     df["spread_feature"] = df["spread"]
 
     # short-horizon volatility: rolling std of mid-price returns.

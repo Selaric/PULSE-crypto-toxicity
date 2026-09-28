@@ -70,6 +70,7 @@ def main():
         f"Split: {len(split.y_train)} train / {len(split.y_val)} val / "
         f"{len(split.y_test)} test"
     )
+    print(split.y_val.mean())
 
     logreg_model, scaler = train_logreg(split, **config["models"]["logreg"])
     logreg_metrics = evaluate(logreg_model, split.X_val, split.y_val, scaler=scaler)
