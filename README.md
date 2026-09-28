@@ -110,7 +110,19 @@ The latest status snapshot reported:
 - 2 rotating JSONL files
 - 8,626 raw messages
 - collection interval: 19:43:51–19:50:29 UTC
-- no full pipeline run on this new session yet
+- first full pipeline run completed at 16:11 local time
+
+The first run on the expanded session loaded 15,780 book events and 6,002
+trades, then labeled 5,922 events. The configured label settings
+(`horizon_events=300`, `threshold_bps=2.0`) produced a 19.5% toxic rate,
+still inside the target 10–40% band. The threshold sweep also showed that
+the toxic rate varies materially with the settings: 32.6% at 1,000 events
+and 2 bps, versus 6.5% at 100 events and 2 bps.
+
+The validation split contained 888 events. LogReg reached ROC AUC 0.499,
+PR AUC 0.216, and Brier score 0.235; LightGBM reached ROC AUC 0.441,
+PR AUC 0.238, and Brier score 0.193. These early AUC values do not show
+useful predictive power yet and should not be treated as final conclusions.
 
 These counts are a collection-health check only; they do not measure data
 quality or model performance. The lightweight status check is scheduled
