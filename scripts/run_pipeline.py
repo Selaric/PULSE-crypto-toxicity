@@ -10,6 +10,7 @@ see the TODOs printed along the way.
 import sys
 from pathlib import Path
 
+import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -51,18 +52,33 @@ def main():
     check_no_leakage(book_df, labeled, horizon_events=horizon)
     log.info(f"Labeled {len(labeled)} events, toxic rate={labeled['label'].mean():.3f}")
 
+    # Merge each labeled trade with the most recent feature snapshot from at
+    # or before its own timestamp to preserve the no-look-ahead constraint.
     merged = pd.merge_asof(
         labeled.sort_values("time"),
         book_df.sort_values("time"),
         on="time", direction="backward",
-    ) if False else None  # TODO: you'll need to merge labeled trades with their contemporaneous
-                            # feature row (as-of, backward direction) before this split works --
-                            # left as an explicit step since the exact join key depends on how
-                            # you end up storing feature snapshots once you have real data volume
+    )
+    log.info(f"Merged {len(merged)} labeled events with contemporaneous features")
 
-    log.info("Feature/label merge is a TODO -- see comment above. Stopping here for the skeleton.")
+    split = chronological_split(
+        merged, label_col="label",
+        train_frac=config["models"]["train_frac"],
+        val_frac=config["models"]["val_frac"],
+    )
+    log.info(
+        f"Split: {len(split.y_train)} train / {len(split.y_val)} val / "
+        f"{len(split.y_test)} test"
+    )
+
+    logreg_model, scaler = train_logreg(split, **config["models"]["logreg"])
+    logreg_metrics = evaluate(logreg_model, split.X_val, split.y_val, scaler=scaler)
+    log.info(f"LogReg validation: {logreg_metrics}")
+
+    lgbm_model = train_lightgbm(split, **config["models"]["lightgbm"])
+    lgbm_metrics = evaluate(lgbm_model, split.X_val, split.y_val)
+    log.info(f"LightGBM validation: {lgbm_metrics}")
 
 
 if __name__ == "__main__":
-    import pandas as pd
     main()
