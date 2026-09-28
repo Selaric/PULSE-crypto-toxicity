@@ -62,7 +62,8 @@ tests/                   — pytest suite, 32 tests, all passing against synthet
    For a lightweight collection sanity check, run
    `python scripts/check_collection_status.py`; it reports raw file and
    message counts plus the earliest/latest collection timestamps without
-   running the pipeline.
+   running the pipeline. The local Windows task runs this check every two
+   hours.
 4. **Review the toxicity threshold.** `config.yaml`'s
    `horizon_events=300, threshold_bps=2.0` are carried over from the
    AAPL/INTC project. The current real-data run produced a 19.5% toxic
@@ -113,7 +114,10 @@ The latest status snapshot reported:
 
 These counts are a collection-health check only; they do not measure data
 quality or model performance. The lightweight status check is scheduled
-locally every two hours and writes to `data/collection_status.log`.
+locally every two hours and writes to `data/collection_status.log`. A
+separate local task runs the full pipeline after 24 hours, then once per
+day, writing output to `data/pipeline_runs.log`. Neither task stops or
+changes the collector.
 
 ### Measures to improve confidence
 

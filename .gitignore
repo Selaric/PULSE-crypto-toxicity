@@ -4,6 +4,7 @@ __pycache__/
 data/raw/*.jsonl
 data/processed/*.parquet
 data/collection_status.log
+data/pipeline_runs.log
 .env
 *.egg-info/
 .ipynb_checkpoints/
