@@ -90,6 +90,10 @@ class CoinbaseCollector:
                 print(f"[collector] disconnected ({e}), reconnecting in {backoff}s")
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, self.max_reconnect_backoff_seconds)
+            except Exception as e:
+                print(f"[collector] unexpected error ({e}), reconnecting in {backoff}s")
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, self.max_reconnect_backoff_seconds)
 
     def close(self):
         if self._current_file:
