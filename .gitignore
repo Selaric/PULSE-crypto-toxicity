@@ -6,6 +6,7 @@ data/processed/*.parquet
 data/collection_status.log
 data/pipeline_runs.log
 data/manual_pipeline.log
+data/manual_pipeline_latest.log
 .env
 *.egg-info/
 .ipynb_checkpoints/
