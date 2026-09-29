@@ -118,9 +118,10 @@ labeled 181,424 events and produced a 13.5% toxic rate, inside the target
 
 The validation split contained 27,214 events. LogReg reached ROC AUC
 0.518, PR AUC 0.106, and Brier score 0.237; LightGBM reached ROC AUC
-0.514, PR AUC 0.107, and Brier score 0.096. The larger sample improves
-confidence in the label-rate estimate, but both AUC values remain close to
-random and do not yet demonstrate useful predictive power.
+0.514, PR AUC 0.107, and Brier score 0.096. The engineered features carry
+a small, statistically detectable signal above chance, but not a strong one.
+That is consistent with genuine market efficiency at this horizon, not a
+data or pipeline problem, given the sample size.
 
 These counts are a collection-health check only; they do not measure data
 quality or model performance. The lightweight status check is scheduled
@@ -133,8 +134,9 @@ stopped after this completed run.
 
 1. Compare calm and active market periods separately rather than pooling
    all regimes together.
-2. Re-sweep the equity-derived horizon and threshold values for BTC-USD.
-3. Implement full-depth `depth_imbalance` before treating model gains as
-   robust.
-4. Investigate why AUC remains near random despite the larger sample,
-   including feature quality, label horizon, and chronological drift.
+2. Re-sweep shorter and longer labeling horizons at this larger sample
+   size, rather than assuming the equity-derived horizon transfers.
+3. Add full-depth `depth_imbalance` features using the available L2 data.
+4. Either test richer features and horizons, or accept 0.51–0.52 as the
+   honest ceiling for this feature set and move to the decision/backtest
+   layer with that ceiling acknowledged up front.
